@@ -1,0 +1,8 @@
+{
+  "name": "Pegaam",
+  "description": "A modern, dark-themed real-time chat application with room management and image sharing.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper to check if user is the owner of the resource
+    function isOwner(resource) {
+      return resource.data.ownerId == request.auth.uid;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if request.auth.uid == userId;
+    }
+
+    // Rooms
+    match /rooms/{roomId} {
+      // Allow reading and creating rooms if signed in
+      allow read, create: if isSignedIn();
+      
+      // Allow updating (e.g. joining) if signed in
+      // In a production app, you might want to validate the 'joiners' array update specifically
+      allow update: if isSignedIn();
+      
+      // Only the owner can delete the room
+      allow delete: if isSignedIn() && isOwner(resource);
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        // Anyone in the room (or just signed in for this simple version) can read/write messages
+        allow read, list: if isSignedIn();
+        allow create: if isSignedIn();
+        // Messages typically shouldn't be edited or deleted by others, 
+        // but for simplicity we allow authors to potentially delete if you implement that feature later
+        allow delete: if isSignedIn() && request.auth.uid == resource.data.senderId;
+      }
+    }
+  }
+}
